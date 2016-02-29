@@ -17,20 +17,21 @@
 package org.apache.manifoldcf.agents.transformation.mico;
 
 import java.io.*;
-
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.HashSet;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.manifoldcf.agents.interfaces.IOutputAddActivity;
 import org.apache.manifoldcf.agents.interfaces.IOutputCheckActivity;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
 import org.apache.manifoldcf.agents.system.Logging;
-import org.apache.manifoldcf.agents.system.ManifoldCF;
 import org.apache.manifoldcf.agents.transformation.BaseTransformationConnector;
 import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
 import org.apache.manifoldcf.core.interfaces.IPostParameters;
@@ -39,18 +40,19 @@ import org.apache.manifoldcf.core.interfaces.Specification;
 import org.apache.manifoldcf.core.interfaces.SpecificationNode;
 import org.apache.manifoldcf.core.interfaces.VersionContext;
 
+import eu.mico.platform.event.api.EventManager;
+import eu.mico.platform.persistence.api.PersistenceService;
+
 public class MicoExtractor extends BaseTransformationConnector {
 	private static final String EDIT_SPECIFICATION_JS = "editSpecification.js";
-	private static final String EDIT_SPECIFICATION_OPENNLP_HTML = "editSpecification_OpenNLP.html";
+	private static final String EDIT_SPECIFICATION_MICO_HTML = "editSpecification_MICO.html";
 	private static final String VIEW_SPECIFICATION_HTML = "viewSpecification.html";
-
+			
 	protected static int maximumExtractionCharacters = 524288;
 
 	protected static final String ACTIVITY_EXTRACT = "extract";
 
 	protected static final String[] activitiesList = new String[] { ACTIVITY_EXTRACT };
-
-	protected final File fileDirectory = ManifoldCF.getFileProperty(ManifoldCF.fileResourcesProperty);
 
 	/** We handle up to 64K in memory; after that we go to disk. */
 	protected static final long inMemoryMaximumFile = 65536;
@@ -136,7 +138,20 @@ public class MicoExtractor extends BaseTransformationConnector {
 
 		SpecPacker sp = new SpecPacker(pipelineDescription.getSpecification());
 		
+		byte[] bytes = IOUtils.toByteArray(document.getBinaryStream());
 		
+		try {
+			EventManager eventManager = MicoConfig.EventManager(sp.getMicoServer(), sp.getMicoUser(), sp.getMicoPassword());
+			PersistenceService persistenceService = eventManager.getPersistenceService();
+			
+			
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// create a duplicate
 		RepositoryDocument docCopy = document.duplicate();
@@ -276,7 +291,39 @@ public class MicoExtractor extends BaseTransformationConnector {
 		paramMap.put("SEQNUM", Integer.toString(connectionSequenceNumber));
 		paramMap.put("SELECTEDNUM", Integer.toString(actualSequenceNumber));
 
-		Messages.outputResourceWithVelocity(out, locale, EDIT_SPECIFICATION_OPENNLP_HTML, paramMap);
+		fillInMICOSpecificationMap(paramMap, os);
+		Messages.outputResourceWithVelocity(out, locale, EDIT_SPECIFICATION_MICO_HTML, paramMap);
+	}
+	
+	
+	protected static void fillInMICOSpecificationMap(Map<String, Object> paramMap, Specification os){
+		String micoServer = "";
+		String micoUser = "";
+		String micoPassword = "";
+		for(int i=0;i<os.getChildCount();i++){
+			SpecificationNode sn = os.getChild(i);
+			if(sn.getType().equals(MicoConfig.NODE_MICO_SERVER)){
+				micoServer = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE); 
+				if(micoServer == null){
+					micoServer = "";
+				}
+			}
+			else if(sn.getType().equals(MicoConfig.NODE_MICO_USER)){
+				micoUser = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE); 
+				if(micoUser == null){
+					micoUser = "";
+				}
+			}
+			else if(sn.getType().equals(MicoConfig.NODE_MICO_PASSWORD)){
+				micoPassword = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE); 
+				if(micoPassword == null){
+					micoPassword = "";
+				}
+			}
+		}
+		paramMap.put("MICOSERVER", micoServer);
+		paramMap.put("MICOUSER", micoUser);
+		paramMap.put("MICOPASSWORD", micoPassword);
 	}
 
 	/**
@@ -303,6 +350,33 @@ public class MicoExtractor extends BaseTransformationConnector {
 	public String processSpecificationPost(IPostParameters variableContext, Locale locale, Specification os,
 			int connectionSequenceNumber) throws ManifoldCFException {
 		String seqPrefix = "s" + connectionSequenceNumber + "_";
+		
+		SpecificationNode node = new SpecificationNode(MicoConfig.NODE_MICO_SERVER);
+	    String micoserver = variableContext.getParameter(seqPrefix + "micoserver");
+	    if(micoserver != null){
+	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micoserver);
+	    }else{
+	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
+	    }
+	    os.addChild(os.getChildCount(), node);
+	    
+	    node = new SpecificationNode(MicoConfig.NODE_MICO_USER);
+	    String micouser = variableContext.getParameter(seqPrefix + "micouser");
+	    if(micoserver != null){
+	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micouser);
+	    }else{
+	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
+	    }
+	    os.addChild(os.getChildCount(), node);
+	    
+	    node = new SpecificationNode(MicoConfig.NODE_MICO_PASSWORD);
+	    String micopassword = variableContext.getParameter(seqPrefix + "micopassword");
+	    if(micoserver != null){
+	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micopassword);
+	    }else{
+	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
+	    }
+	    os.addChild(os.getChildCount(), node);
 
 		return seqPrefix;
 	}
@@ -328,6 +402,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 		Map<String, Object> paramMap = new HashMap<String, Object>();
 		paramMap.put("SEQNUM", Integer.toString(connectionSequenceNumber));
 
+		fillInMICOSpecificationMap(paramMap, os);
 		Messages.outputResourceWithVelocity(out, locale, VIEW_SPECIFICATION_HTML, paramMap);
 	}
 
@@ -337,22 +412,73 @@ public class MicoExtractor extends BaseTransformationConnector {
 			throw new ManifoldCFException(e.getMessage(), e, ManifoldCFException.INTERRUPTED);
 		throw new ManifoldCFException(e.getMessage(), e);
 	}
-
+	
 
 	protected static class SpecPacker {
+		
+		private final String micoServer;
+		private final String micoUser;
+		private final String micoPassword;
 
 		public SpecPacker(Specification os) {
 
+			String micoServer = null;
+			String micoUser = null;
+			String micoPassword = null;
+			
 			for (int i = 0; i < os.getChildCount(); i++) {
 				SpecificationNode sn = os.getChild(i);
+				if(sn.getType().equals(MicoConfig.NODE_MICO_SERVER)){
+					micoServer = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
+				}
+				else if(sn.getType().equals(MicoConfig.NODE_MICO_USER)){
+					micoUser = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
+				}
+				else if(sn.getType().equals(MicoConfig.NODE_MICO_PASSWORD)){
+					micoPassword = sn.getAttributeValue(micoPassword);
+				}
 
 			}
+			this.micoServer = micoServer;
+			this.micoUser = micoUser;
+			this.micoPassword = micoPassword;
 		}
 
 		public String toPackedString() {
 			StringBuilder sb = new StringBuilder();
-
+			if(micoServer != null){
+				sb.append('+');
+				sb.append(micoServer);
+			}
+			else{
+				sb.append('-');
+			}
+			if(micoUser != null){
+				sb.append('+');
+				sb.append(micoUser);
+			}
+			else{
+				sb.append('-');
+			}if(micoPassword != null){
+				sb.append('+');
+				sb.append(micoPassword);
+			}
+			else{
+				sb.append('-');
+			}
 			return sb.toString();
+		}
+
+		public String getMicoServer() {
+			return micoServer;
+		}
+
+		public String getMicoUser() {
+			return micoUser;
+		}
+
+		public String getMicoPassword() {
+			return micoPassword;
 		}
 
 	}
