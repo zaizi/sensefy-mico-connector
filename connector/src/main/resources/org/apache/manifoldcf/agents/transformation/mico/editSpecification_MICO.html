@@ -14,3 +14,36 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
+#if($TABNAME == $ResourceBundle.getString('MicoExtractor.MicoTabName')
+&& ${SEQNUM} == ${SELECTEDNUM})
+<table class="displaytable">
+	<tr>
+		<td class="separator" colspan="2"><hr /></td>
+	</tr>
+	<tr>
+		<td class="description"><nobr>$Encoder.bodyEscape($ResourceBundle.getString('MicoExtractor.MicoServer'))</nobr></td>
+		<td class="value"><input type="text" name="s${SEQNUM}_micoserver"
+			size="64" value="$Encoder.attributeEscape($MICOSERVER)" /></td>
+	</tr>
+	<tr>
+		<td class="separator" colspan="2"><hr /></td>
+	</tr>
+	<tr>
+		<td class="description"><nobr>$Encoder.bodyEscape($ResourceBundle.getString('MicoExtractor.MicoUser'))</nobr></td>
+		<td class="value"><input type="text" name="s${SEQNUM}_micouser"
+			size="64" value="$Encoder.attributeEscape($MICOUSER)" /></td>
+	</tr>
+	<tr>
+		<td class="separator" colspan="2"><hr /></td>
+	</tr>
+	<tr>
+		<td class="description"><nobr>$Encoder.bodyEscape($ResourceBundle.getString('MicoExtractor.MicoPassword'))</nobr></td>
+		<td class="value"><input type="password" name="s${SEQNUM}_micopassword"
+			size="64" value="$Encoder.attributeEscape($MICOPASSWORD)" /></td>
+	</tr>
+</table>
+#else 
+<input type="hidden" name="s${SEQNUM}_micoserver" value="$Encoder.bodyEscape($MICOSERVER)"/>
+<input type="hidden" name="s${SEQNUM}_micouser" value="$Encoder.bodyEscape($MICOUSER)"/>
+<input type="hidden" name="s${SEQNUM}_micopassword" value="$Encoder.bodyEscape($MICOPASSWORD)"/>
+#end
