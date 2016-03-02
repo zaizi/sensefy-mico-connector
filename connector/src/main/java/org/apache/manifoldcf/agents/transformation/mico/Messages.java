@@ -25,8 +25,8 @@ import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
 
 public class Messages extends org.apache.manifoldcf.ui.i18n.Messages
 {
-  public static final String DEFAULT_BUNDLE_NAME="org.apache.manifoldcf.agents.transformation.tika.common";
-  public static final String DEFAULT_PATH_NAME="org.apache.manifoldcf.agents.transformation.tika";
+  public static final String DEFAULT_BUNDLE_NAME="org.apache.manifoldcf.agents.transformation.mico.common";
+  public static final String DEFAULT_PATH_NAME="org.apache.manifoldcf.agents.transformation.mico";
   
   /** Constructor - do no instantiate
   */

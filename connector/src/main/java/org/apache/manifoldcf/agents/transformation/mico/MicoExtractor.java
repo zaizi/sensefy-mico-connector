@@ -362,7 +362,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 	    
 	    node = new SpecificationNode(MicoConfig.NODE_MICO_USER);
 	    String micouser = variableContext.getParameter(seqPrefix + "micouser");
-	    if(micoserver != null){
+	    if(micouser != null){
 	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micouser);
 	    }else{
 	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
@@ -371,14 +371,14 @@ public class MicoExtractor extends BaseTransformationConnector {
 	    
 	    node = new SpecificationNode(MicoConfig.NODE_MICO_PASSWORD);
 	    String micopassword = variableContext.getParameter(seqPrefix + "micopassword");
-	    if(micoserver != null){
+	    if(micopassword != null){
 	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micopassword);
 	    }else{
 	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
 	    }
 	    os.addChild(os.getChildCount(), node);
 
-		return seqPrefix;
+		return null;
 	}
 
 	/**

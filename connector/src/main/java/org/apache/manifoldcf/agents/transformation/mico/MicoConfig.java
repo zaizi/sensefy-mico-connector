@@ -27,14 +27,14 @@ import eu.mico.platform.event.api.EventManager;
 import eu.mico.platform.event.impl.EventManagerImpl;
 
 /**
- * Parameters for Tika transformation connector.
+ * Parameters for MICO transformation connector.
  */
 public class MicoConfig {
 	
 	// Specification nodes and values
-	public static final String NODE_MICO_SERVER = "micoserver";
-	public static final String NODE_MICO_USER = "micouser";
-	public static final String NODE_MICO_PASSWORD = "micopassword";
+	public static final String NODE_MICO_SERVER = "micoServer";
+	public static final String NODE_MICO_USER = "micoUser";
+	public static final String NODE_MICO_PASSWORD = "micoPassword";
 	public static final String ATTRIBUTE_VALUE = "value";
 
 	private static EventManager eventManager;

@@ -16,5 +16,12 @@
 -->
 
 <script type="text/javascript">
-
+function s${SEQNUM}_checkSpecification()
+{
+  return true;
+}
+function s${SEQNUM}_checkSpecificationForSave()
+{
+  return true;
+}
 </script>
