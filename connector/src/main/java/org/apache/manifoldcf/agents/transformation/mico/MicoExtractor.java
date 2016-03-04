@@ -39,9 +39,21 @@ import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
 import org.apache.manifoldcf.core.interfaces.Specification;
 import org.apache.manifoldcf.core.interfaces.SpecificationNode;
 import org.apache.manifoldcf.core.interfaces.VersionContext;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.openrdf.model.vocabulary.DCTERMS;
+import org.openrdf.repository.RepositoryException;
 
+import eu.mico.platform.anno4j.model.impl.body.MultiMediaBody;
+import eu.mico.platform.anno4j.model.impl.micotarget.InitialTarget;
 import eu.mico.platform.event.api.EventManager;
 import eu.mico.platform.persistence.api.PersistenceService;
+import eu.mico.platform.persistence.metadata.MICOProvenance;
+import eu.mico.platform.persistence.model.Content;
+import eu.mico.platform.persistence.model.ContentItem;
 
 public class MicoExtractor extends BaseTransformationConnector {
 	private static final String EDIT_SPECIFICATION_JS = "editSpecification.js";
@@ -144,13 +156,43 @@ public class MicoExtractor extends BaseTransformationConnector {
 			EventManager eventManager = MicoConfig.EventManager(sp.getMicoServer(), sp.getMicoUser(), sp.getMicoPassword());
 			PersistenceService persistenceService = eventManager.getPersistenceService();
 			
+			// use tika to detect mediatype
+			Metadata metadata = new Metadata();
+			TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+            Detector detector = tikaConfig.getDetector();
+            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(bytes));
+            MediaType media = detector.detect(tis, metadata);
+            String mediaType = media.toString();
 			
+            if(checkMimeTypeIndexable(pipelineDescription, mediaType, activities)){
+            	// inject to mico platform
+                ContentItem ci = persistenceService.createContentItem();
+                Content contentPart = ci.createContentPart();
+                
+                contentPart.setType(mediaType);
+                contentPart.setProperty(DCTERMS.SOURCE, documentURI);
+                MICOProvenance provenance = new MICOProvenance();
+                provenance.setExtractorName("mcf-mico-connector");
+                MultiMediaBody multiMediaBody = new MultiMediaBody();
+                multiMediaBody.setFormat(mediaType);
+                InitialTarget target = new InitialTarget(documentURI);
+                contentPart.createAnnotation(multiMediaBody, null, provenance, target);
+                
+                OutputStream out = contentPart.getOutputStream();
+                int bytescount = IOUtils.copy(new ByteArrayInputStream(bytes), out);
+                out.close();
+                Logging.agents.info("content item "+ci.getURI()+": uploaded "+bytescount+" bytes for new content part "+contentPart.getURI());
+                eventManager.injectContentItem(ci);
+            }
+            
+            
+            
 		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Logging.agents.error(e);
 		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Logging.agents.error(e);
+		} catch (RepositoryException e) {
+			Logging.agents.error(e);
 		}
 
 		// create a duplicate
@@ -435,7 +477,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 					micoUser = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
 				}
 				else if(sn.getType().equals(MicoConfig.NODE_MICO_PASSWORD)){
-					micoPassword = sn.getAttributeValue(micoPassword);
+					micoPassword = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
 				}
 
 			}

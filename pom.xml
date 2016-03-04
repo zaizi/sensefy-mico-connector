@@ -15,7 +15,7 @@
 
 	<artifactId>mcf-mico-connector</artifactId>
 	<name>ManifoldCF - Connectors - MICO Transformer</name>
-	
+
 	<repositories>
 		<repository>
 			<id>mico.releases</id>
@@ -78,7 +78,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
@@ -212,6 +212,28 @@
 			<groupId>${project.groupId}</groupId>
 			<artifactId>mcf-ui-core</artifactId>
 			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-core</artifactId>
+			<version>${tika.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>jhighlight</artifactId>
+					<groupId>com.uwyn</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-parsers</artifactId>
+			<version>${tika.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>jhighlight</artifactId>
+					<groupId>com.uwyn</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
