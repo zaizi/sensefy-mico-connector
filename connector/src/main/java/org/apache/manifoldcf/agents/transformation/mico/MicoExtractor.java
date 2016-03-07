@@ -59,7 +59,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 	private static final String EDIT_SPECIFICATION_JS = "editSpecification.js";
 	private static final String EDIT_SPECIFICATION_MICO_HTML = "editSpecification_MICO.html";
 	private static final String VIEW_SPECIFICATION_HTML = "viewSpecification.html";
-			
+
 	protected static int maximumExtractionCharacters = 524288;
 
 	protected static final String ACTIVITY_EXTRACT = "extract";
@@ -145,48 +145,48 @@ public class MicoExtractor extends BaseTransformationConnector {
 	public int addOrReplaceDocumentWithException(String documentURI, VersionContext pipelineDescription,
 			RepositoryDocument document, String authorityNameString, IOutputAddActivity activities)
 					throws ManifoldCFException, ServiceInterruption, IOException {
-		
+
 		Logging.agents.debug("Starting MICO extraction");
 
 		SpecPacker sp = new SpecPacker(pipelineDescription.getSpecification());
-		
+
 		byte[] bytes = IOUtils.toByteArray(document.getBinaryStream());
-		
+
 		try {
-			EventManager eventManager = MicoConfig.EventManager(sp.getMicoServer(), sp.getMicoUser(), sp.getMicoPassword());
+			EventManager eventManager = MicoConfig.EventManager(sp.getMicoServer(), sp.getMicoUser(),
+					sp.getMicoPassword());
 			PersistenceService persistenceService = eventManager.getPersistenceService();
-			
+
 			// use tika to detect mediatype
 			Metadata metadata = new Metadata();
 			TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
-            Detector detector = tikaConfig.getDetector();
-            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(bytes));
-            MediaType media = detector.detect(tis, metadata);
-            String mediaType = media.toString();
-			
-            if(checkMimeTypeIndexable(pipelineDescription, mediaType, activities)){
-            	// inject to mico platform
-                ContentItem ci = persistenceService.createContentItem();
-                Content contentPart = ci.createContentPart();
-                
-                contentPart.setType(mediaType);
-                contentPart.setProperty(DCTERMS.SOURCE, documentURI);
-                MICOProvenance provenance = new MICOProvenance();
-                provenance.setExtractorName("mcf-mico-connector");
-                MultiMediaBody multiMediaBody = new MultiMediaBody();
-                multiMediaBody.setFormat(mediaType);
-                InitialTarget target = new InitialTarget(documentURI);
-                contentPart.createAnnotation(multiMediaBody, null, provenance, target);
-                
-                OutputStream out = contentPart.getOutputStream();
-                int bytescount = IOUtils.copy(new ByteArrayInputStream(bytes), out);
-                out.close();
-                Logging.agents.info("content item "+ci.getURI()+": uploaded "+bytescount+" bytes for new content part "+contentPart.getURI());
-                eventManager.injectContentItem(ci);
-            }
-            
-            
-            
+			Detector detector = tikaConfig.getDetector();
+			TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(bytes));
+			MediaType media = detector.detect(tis, metadata);
+			String mediaType = media.toString();
+
+			if (checkMimeTypeIndexable(pipelineDescription, mediaType, activities)) {
+				// inject to mico platform
+				ContentItem ci = persistenceService.createContentItem();
+				Content contentPart = ci.createContentPart();
+
+				contentPart.setType(mediaType);
+				contentPart.setProperty(DCTERMS.SOURCE, documentURI);
+				MICOProvenance provenance = new MICOProvenance();
+				provenance.setExtractorName("mcf-mico-connector");
+				MultiMediaBody multiMediaBody = new MultiMediaBody();
+				multiMediaBody.setFormat(mediaType);
+				InitialTarget target = new InitialTarget(documentURI);
+				contentPart.createAnnotation(multiMediaBody, null, provenance, target);
+
+				OutputStream out = contentPart.getOutputStream();
+				int bytescount = IOUtils.copy(new ByteArrayInputStream(bytes), out);
+				out.close();
+				Logging.agents.info("content item " + ci.getURI() + ": uploaded " + bytescount
+						+ " bytes for new content part " + contentPart.getURI());
+				eventManager.injectContentItem(ci);
+			}
+
 		} catch (TimeoutException e) {
 			Logging.agents.error(e);
 		} catch (URISyntaxException e) {
@@ -336,29 +336,26 @@ public class MicoExtractor extends BaseTransformationConnector {
 		fillInMICOSpecificationMap(paramMap, os);
 		Messages.outputResourceWithVelocity(out, locale, EDIT_SPECIFICATION_MICO_HTML, paramMap);
 	}
-	
-	
-	protected static void fillInMICOSpecificationMap(Map<String, Object> paramMap, Specification os){
+
+	protected static void fillInMICOSpecificationMap(Map<String, Object> paramMap, Specification os) {
 		String micoServer = "";
 		String micoUser = "";
 		String micoPassword = "";
-		for(int i=0;i<os.getChildCount();i++){
+		for (int i = 0; i < os.getChildCount(); i++) {
 			SpecificationNode sn = os.getChild(i);
-			if(sn.getType().equals(MicoConfig.NODE_MICO_SERVER)){
-				micoServer = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE); 
-				if(micoServer == null){
+			if (sn.getType().equals(MicoConfig.NODE_MICO_SERVER)) {
+				micoServer = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
+				if (micoServer == null) {
 					micoServer = "";
 				}
-			}
-			else if(sn.getType().equals(MicoConfig.NODE_MICO_USER)){
-				micoUser = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE); 
-				if(micoUser == null){
+			} else if (sn.getType().equals(MicoConfig.NODE_MICO_USER)) {
+				micoUser = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
+				if (micoUser == null) {
 					micoUser = "";
 				}
-			}
-			else if(sn.getType().equals(MicoConfig.NODE_MICO_PASSWORD)){
-				micoPassword = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE); 
-				if(micoPassword == null){
+			} else if (sn.getType().equals(MicoConfig.NODE_MICO_PASSWORD)) {
+				micoPassword = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
+				if (micoPassword == null) {
 					micoPassword = "";
 				}
 			}
@@ -392,33 +389,33 @@ public class MicoExtractor extends BaseTransformationConnector {
 	public String processSpecificationPost(IPostParameters variableContext, Locale locale, Specification os,
 			int connectionSequenceNumber) throws ManifoldCFException {
 		String seqPrefix = "s" + connectionSequenceNumber + "_";
-		
+
 		SpecificationNode node = new SpecificationNode(MicoConfig.NODE_MICO_SERVER);
-	    String micoserver = variableContext.getParameter(seqPrefix + "micoserver");
-	    if(micoserver != null){
-	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micoserver);
-	    }else{
-	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
-	    }
-	    os.addChild(os.getChildCount(), node);
-	    
-	    node = new SpecificationNode(MicoConfig.NODE_MICO_USER);
-	    String micouser = variableContext.getParameter(seqPrefix + "micouser");
-	    if(micouser != null){
-	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micouser);
-	    }else{
-	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
-	    }
-	    os.addChild(os.getChildCount(), node);
-	    
-	    node = new SpecificationNode(MicoConfig.NODE_MICO_PASSWORD);
-	    String micopassword = variableContext.getParameter(seqPrefix + "micopassword");
-	    if(micopassword != null){
-	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micopassword);
-	    }else{
-	    	node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
-	    }
-	    os.addChild(os.getChildCount(), node);
+		String micoserver = variableContext.getParameter(seqPrefix + "micoserver");
+		if (micoserver != null) {
+			node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micoserver);
+		} else {
+			node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
+		}
+		os.addChild(os.getChildCount(), node);
+
+		node = new SpecificationNode(MicoConfig.NODE_MICO_USER);
+		String micouser = variableContext.getParameter(seqPrefix + "micouser");
+		if (micouser != null) {
+			node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micouser);
+		} else {
+			node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
+		}
+		os.addChild(os.getChildCount(), node);
+
+		node = new SpecificationNode(MicoConfig.NODE_MICO_PASSWORD);
+		String micopassword = variableContext.getParameter(seqPrefix + "micopassword");
+		if (micopassword != null) {
+			node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micopassword);
+		} else {
+			node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
+		}
+		os.addChild(os.getChildCount(), node);
 
 		return null;
 	}
@@ -454,10 +451,9 @@ public class MicoExtractor extends BaseTransformationConnector {
 			throw new ManifoldCFException(e.getMessage(), e, ManifoldCFException.INTERRUPTED);
 		throw new ManifoldCFException(e.getMessage(), e);
 	}
-	
 
 	protected static class SpecPacker {
-		
+
 		private final String micoServer;
 		private final String micoUser;
 		private final String micoPassword;
@@ -467,16 +463,14 @@ public class MicoExtractor extends BaseTransformationConnector {
 			String micoServer = null;
 			String micoUser = null;
 			String micoPassword = null;
-			
+
 			for (int i = 0; i < os.getChildCount(); i++) {
 				SpecificationNode sn = os.getChild(i);
-				if(sn.getType().equals(MicoConfig.NODE_MICO_SERVER)){
+				if (sn.getType().equals(MicoConfig.NODE_MICO_SERVER)) {
 					micoServer = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
-				}
-				else if(sn.getType().equals(MicoConfig.NODE_MICO_USER)){
+				} else if (sn.getType().equals(MicoConfig.NODE_MICO_USER)) {
 					micoUser = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
-				}
-				else if(sn.getType().equals(MicoConfig.NODE_MICO_PASSWORD)){
+				} else if (sn.getType().equals(MicoConfig.NODE_MICO_PASSWORD)) {
 					micoPassword = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
 				}
 
@@ -488,24 +482,22 @@ public class MicoExtractor extends BaseTransformationConnector {
 
 		public String toPackedString() {
 			StringBuilder sb = new StringBuilder();
-			if(micoServer != null){
+			if (micoServer != null) {
 				sb.append('+');
 				sb.append(micoServer);
-			}
-			else{
+			} else {
 				sb.append('-');
 			}
-			if(micoUser != null){
+			if (micoUser != null) {
 				sb.append('+');
 				sb.append(micoUser);
-			}
-			else{
+			} else {
 				sb.append('-');
-			}if(micoPassword != null){
+			}
+			if (micoPassword != null) {
 				sb.append('+');
 				sb.append(micoPassword);
-			}
-			else{
+			} else {
 				sb.append('-');
 			}
 			return sb.toString();
