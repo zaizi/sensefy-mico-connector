@@ -16,19 +16,6 @@
 	<artifactId>mcf-mico-connector</artifactId>
 	<name>ManifoldCF - Connectors - MICO Transformer</name>
 
-	<repositories>
-		<repository>
-			<id>mico.releases</id>
-			<name>MICO Relesases Repository</name>
-			<url>http://mvn.mico-project.eu/content/repositories/releases/</url>
-		</repository>
-		<repository>
-			<id>mico.snapshots</id>
-			<name>MICO Snapshots Repository</name>
-			<url>http://mvn.mico-project.eu/content/repositories/snapshots/</url>
-		</repository>
-	</repositories>
-
 	<build>
 		<defaultGoal>integration-test</defaultGoal>
 		<sourceDirectory>${basedir}/connector/src/main/java</sourceDirectory>
@@ -317,24 +304,9 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>eu.mico-project.platform</groupId>
-			<artifactId>event</artifactId>
-			<version>1.3.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>eu.mico-project.platform</groupId>
-			<artifactId>persistence</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.hadoop</groupId>
-					<artifactId>hadoop-common</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.apache.hadoop</groupId>
-					<artifactId>hadoop-hdfs</artifactId>
-				</exclusion>
-			</exclusions>
-			<version>1.3.0-SNAPSHOT</version>
+			<groupId>org.zaizi</groupId>
+			<artifactId>mico.client</artifactId>
+			<version>1.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- Testing dependencies -->

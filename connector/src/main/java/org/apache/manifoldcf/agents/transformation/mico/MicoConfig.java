@@ -19,12 +19,7 @@
 
 package org.apache.manifoldcf.agents.transformation.mico;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.concurrent.TimeoutException;
-
-import eu.mico.platform.event.api.EventManager;
-import eu.mico.platform.event.impl.EventManagerImpl;
+import org.zaizi.mico.client.MicoClientFactory;
 
 /**
  * Parameters for MICO transformation connector.
@@ -37,14 +32,13 @@ public class MicoConfig {
 	public static final String NODE_MICO_PASSWORD = "micoPassword";
 	public static final String ATTRIBUTE_VALUE = "value";
 
-	private static EventManager eventManager;
+	private static MicoClientFactory micoClientFactory;
 
-	public static synchronized EventManager EventManager(String micoServer, String micoUser, String micoPassword)
-			throws IOException, TimeoutException, URISyntaxException {
-		if (eventManager == null) {
-			eventManager = new EventManagerImpl(micoServer, micoUser, micoPassword);
-			eventManager.init();
+	public static synchronized MicoClientFactory getMicoClientFactory(String micoServer, String micoUser, String micoPassword)
+			{
+		if (micoClientFactory == null) {
+			micoClientFactory = new MicoClientFactory(micoServer, micoUser, micoPassword);
 		}
-		return eventManager;
+		return micoClientFactory;
 	}
 }

@@ -17,13 +17,11 @@
 package org.apache.manifoldcf.agents.transformation.mico;
 
 import java.io.*;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeoutException;
 import java.util.HashSet;
 
 import org.apache.commons.io.IOUtils;
@@ -44,16 +42,11 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.openrdf.model.vocabulary.DCTERMS;
-import org.openrdf.repository.RepositoryException;
-
-import eu.mico.platform.anno4j.model.impl.body.MultiMediaBody;
-import eu.mico.platform.anno4j.model.impl.micotarget.InitialTarget;
-import eu.mico.platform.event.api.EventManager;
-import eu.mico.platform.persistence.api.PersistenceService;
-import eu.mico.platform.persistence.metadata.MICOProvenance;
-import eu.mico.platform.persistence.model.Content;
-import eu.mico.platform.persistence.model.ContentItem;
+import org.zaizi.mico.client.Injector;
+import org.zaizi.mico.client.MicoClientFactory;
+import org.zaizi.mico.client.exception.MicoClientException;
+import org.zaizi.mico.client.model.ContentItem;
+import org.zaizi.mico.client.model.ContentPart;
 
 public class MicoExtractor extends BaseTransformationConnector {
 	private static final String EDIT_SPECIFICATION_JS = "editSpecification.js";
@@ -153,9 +146,9 @@ public class MicoExtractor extends BaseTransformationConnector {
 		byte[] bytes = IOUtils.toByteArray(document.getBinaryStream());
 
 		try {
-			EventManager eventManager = MicoConfig.EventManager(sp.getMicoServer(), sp.getMicoUser(),
+			MicoClientFactory micoClientFactory = MicoConfig.getMicoClientFactory(sp.getMicoServer(), sp.getMicoUser(),
 					sp.getMicoPassword());
-			PersistenceService persistenceService = eventManager.getPersistenceService();
+			
 
 			// use tika to detect mediatype
 			Metadata metadata = new Metadata();
@@ -167,32 +160,18 @@ public class MicoExtractor extends BaseTransformationConnector {
 
 			if (checkMimeTypeIndexable(pipelineDescription, mediaType, activities)) {
 				// inject to mico platform
-				ContentItem ci = persistenceService.createContentItem();
-				Content contentPart = ci.createContentPart();
-
-				contentPart.setType(mediaType);
-				contentPart.setProperty(DCTERMS.SOURCE, documentURI);
-				MICOProvenance provenance = new MICOProvenance();
-				provenance.setExtractorName("mcf-mico-connector");
-				MultiMediaBody multiMediaBody = new MultiMediaBody();
-				multiMediaBody.setFormat(mediaType);
-				InitialTarget target = new InitialTarget(documentURI);
-				contentPart.createAnnotation(multiMediaBody, null, provenance, target);
-
-				OutputStream out = contentPart.getOutputStream();
-				int bytescount = IOUtils.copy(new ByteArrayInputStream(bytes), out);
-				out.close();
-				Logging.agents.info("content item " + ci.getURI() + ": uploaded " + bytescount
-						+ " bytes for new content part " + contentPart.getURI());
-				eventManager.injectContentItem(ci);
+				Injector injector = micoClientFactory.createInjectorClient();
+				ContentItem ci = injector.createContentItem();
+				
+				ContentPart contentPart = injector.addContentPart(ci, mediaType, documentURI, new ByteArrayInputStream(bytes));
+				ci.addContentPart(contentPart);
+				injector.submitContentItem(ci);
+				
+				Logging.agents.info("Submitted "+contentPart.getUri()+" for Content Item "+ci.getUri());
 			}
 
-		} catch (TimeoutException e) {
-			Logging.agents.error(e);
-		} catch (URISyntaxException e) {
-			Logging.agents.error(e);
-		} catch (RepositoryException e) {
-			Logging.agents.error(e);
+		}catch(MicoClientException e){
+			Logging.agents.error("Exception occured in Mico Client", e);
 		}
 
 		// create a duplicate
