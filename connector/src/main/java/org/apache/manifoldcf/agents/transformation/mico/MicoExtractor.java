@@ -144,6 +144,9 @@ public class MicoExtractor extends BaseTransformationConnector {
 		SpecPacker sp = new SpecPacker(pipelineDescription.getSpecification());
 
 		byte[] bytes = IOUtils.toByteArray(document.getBinaryStream());
+		
+		// create a duplicate
+		RepositoryDocument docCopy = document.duplicate();
 
 		try {
 			MicoClientFactory micoClientFactory = MicoConfig.getMicoClientFactory(sp.getMicoServer(), sp.getMicoUser(),
@@ -158,7 +161,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 			MediaType media = detector.detect(tis, metadata);
 			String mediaType = media.toString();
 
-			if (checkMimeTypeIndexable(pipelineDescription, mediaType, activities)) {
+			if (acceptableMimeTypes.contains(mediaType.toLowerCase(Locale.ROOT))) {
 				// inject to mico platform
 				Injector injector = micoClientFactory.createInjectorClient();
 				ContentItem ci = injector.createContentItem();
@@ -167,6 +170,8 @@ public class MicoExtractor extends BaseTransformationConnector {
 				ci.addContentPart(contentPart);
 				injector.submitContentItem(ci);
 				
+				docCopy.addField(sp.getMicoDocUriField(), ci.getUri());
+				
 				Logging.agents.info("Submitted "+contentPart.getUri()+" for Content Item "+ci.getUri());
 			}
 
@@ -174,8 +179,8 @@ public class MicoExtractor extends BaseTransformationConnector {
 			Logging.agents.error("Exception occured in Mico Client", e);
 		}
 
-		// create a duplicate
-		RepositoryDocument docCopy = document.duplicate();
+		// reset original stream
+		docCopy.setBinary(new ByteArrayInputStream(bytes), bytes.length);
 
 		return activities.sendDocument(documentURI, docCopy);
 
@@ -187,13 +192,11 @@ public class MicoExtractor extends BaseTransformationConnector {
 
 		// Set up to spool back the original content, using either memory or
 		// disk, whichever makes sense.
-
 	}
 
 	private final static Set<String> acceptableMimeTypes = new HashSet<String>();
 
 	static {
-		acceptableMimeTypes.add("application/octet-stream");
 		acceptableMimeTypes.add("video/mp4");
 		acceptableMimeTypes.add("image/jpeg");
 		acceptableMimeTypes.add("image/png");
@@ -216,10 +219,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 	@Override
 	public boolean checkMimeTypeIndexable(VersionContext pipelineDescription, String mimeType,
 			IOutputCheckActivity checkActivity) throws ManifoldCFException, ServiceInterruption {
-		if (mimeType == null || !acceptableMimeTypes.contains(mimeType.toLowerCase(Locale.ROOT))) {
-			return false;
-		}
-		// Do a downstream check too
+		
 		return super.checkMimeTypeIndexable(pipelineDescription, mimeType, checkActivity);
 	}
 
@@ -320,6 +320,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 		String micoServer = "";
 		String micoUser = "";
 		String micoPassword = "";
+		String micoDocUriField="";
 		for (int i = 0; i < os.getChildCount(); i++) {
 			SpecificationNode sn = os.getChild(i);
 			if (sn.getType().equals(MicoConfig.NODE_MICO_SERVER)) {
@@ -337,11 +338,17 @@ public class MicoExtractor extends BaseTransformationConnector {
 				if (micoPassword == null) {
 					micoPassword = "";
 				}
+			} else if (sn.getType().equals(MicoConfig.NODE_MICO_DOC_URI_FIELD)) {
+				micoDocUriField = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
+				if (micoDocUriField == null) {
+					micoDocUriField = "";
+				}
 			}
 		}
 		paramMap.put("MICOSERVER", micoServer);
 		paramMap.put("MICOUSER", micoUser);
 		paramMap.put("MICOPASSWORD", micoPassword);
+		paramMap.put("MICODOCURI", micoDocUriField);
 	}
 
 	/**
@@ -395,6 +402,15 @@ public class MicoExtractor extends BaseTransformationConnector {
 			node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
 		}
 		os.addChild(os.getChildCount(), node);
+		
+		node = new SpecificationNode(MicoConfig.NODE_MICO_DOC_URI_FIELD);
+		String micodocurifield = variableContext.getParameter(seqPrefix + "micodocuri");
+		if (micodocurifield != null) {
+			node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, micodocurifield);
+		} else {
+			node.setAttribute(MicoConfig.ATTRIBUTE_VALUE, "");
+		}
+		os.addChild(os.getChildCount(), node);
 
 		return null;
 	}
@@ -436,13 +452,15 @@ public class MicoExtractor extends BaseTransformationConnector {
 		private final String micoServer;
 		private final String micoUser;
 		private final String micoPassword;
+		private final String micoDocUriField;
 
 		public SpecPacker(Specification os) {
 
 			String micoServer = null;
 			String micoUser = null;
 			String micoPassword = null;
-
+			String micoDocUriField = null;
+			
 			for (int i = 0; i < os.getChildCount(); i++) {
 				SpecificationNode sn = os.getChild(i);
 				if (sn.getType().equals(MicoConfig.NODE_MICO_SERVER)) {
@@ -451,12 +469,15 @@ public class MicoExtractor extends BaseTransformationConnector {
 					micoUser = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
 				} else if (sn.getType().equals(MicoConfig.NODE_MICO_PASSWORD)) {
 					micoPassword = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
+				} else if (sn.getType().equals(MicoConfig.NODE_MICO_DOC_URI_FIELD)) {
+					micoDocUriField = sn.getAttributeValue(MicoConfig.ATTRIBUTE_VALUE);
 				}
 
 			}
 			this.micoServer = micoServer;
 			this.micoUser = micoUser;
 			this.micoPassword = micoPassword;
+			this.micoDocUriField = micoDocUriField;
 		}
 
 		public String toPackedString() {
@@ -479,6 +500,12 @@ public class MicoExtractor extends BaseTransformationConnector {
 			} else {
 				sb.append('-');
 			}
+			if (micoDocUriField != null) {
+				sb.append('+');
+				sb.append(micoDocUriField);
+			} else {
+				sb.append('-');
+			}
 			return sb.toString();
 		}
 
@@ -492,6 +519,10 @@ public class MicoExtractor extends BaseTransformationConnector {
 
 		public String getMicoPassword() {
 			return micoPassword;
+		}
+		
+		public String getMicoDocUriField(){
+			return micoDocUriField;
 		}
 
 	}

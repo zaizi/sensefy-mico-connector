@@ -30,6 +30,7 @@ public class MicoConfig {
 	public static final String NODE_MICO_SERVER = "micoServer";
 	public static final String NODE_MICO_USER = "micoUser";
 	public static final String NODE_MICO_PASSWORD = "micoPassword";
+	public static final String NODE_MICO_DOC_URI_FIELD="micoDocUriField";
 	public static final String ATTRIBUTE_VALUE = "value";
 
 	private static MicoClientFactory micoClientFactory;

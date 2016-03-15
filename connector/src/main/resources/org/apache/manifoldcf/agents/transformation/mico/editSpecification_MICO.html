@@ -40,9 +40,18 @@
 		<td class="value"><input type="password" name="s${SEQNUM}_micopassword"
 			size="64" value="$Encoder.attributeEscape($MICOPASSWORD)" /></td>
 	</tr>
+	<tr>
+		<td class="separator" colspan="2"><hr /></td>
+	</tr>
+	<tr>
+		<td class="description"><nobr>$Encoder.bodyEscape($ResourceBundle.getString('MicoExtractor.MicoDocURI'))</nobr></td>
+		<td class="value"><input type="password" name="s${SEQNUM}_micodocuri"
+			size="64" value="$Encoder.attributeEscape($MICODOCURI)" /></td>
+	</tr>
 </table>
 #else 
 <input type="hidden" name="s${SEQNUM}_micoserver" value="$Encoder.bodyEscape($MICOSERVER)"/>
 <input type="hidden" name="s${SEQNUM}_micouser" value="$Encoder.bodyEscape($MICOUSER)"/>
 <input type="hidden" name="s${SEQNUM}_micopassword" value="$Encoder.bodyEscape($MICOPASSWORD)"/>
+<input type="hidden" name="s${SEQNUM}_micodocuri" value="$Encoder.bodyEscape($MICODOCURI)"/>
 #end
