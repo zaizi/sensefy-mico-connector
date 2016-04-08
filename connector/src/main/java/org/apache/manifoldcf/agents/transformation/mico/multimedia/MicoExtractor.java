@@ -52,6 +52,8 @@ public class MicoExtractor extends BaseTransformationConnector {
 	private static final String EDIT_SPECIFICATION_JS = "editSpecification.js";
 	private static final String EDIT_SPECIFICATION_MICO_HTML = "editSpecification_MICO.html";
 	private static final String VIEW_SPECIFICATION_HTML = "viewSpecification.html";
+	
+	private static final String MICO_PROCESSED_STATUS_FIELD = "is_processed_mico";
 
 	protected static int maximumExtractionCharacters = 524288;
 
@@ -171,6 +173,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 				injector.submitContentItem(ci);
 				
 				docCopy.addField(sp.getMicoDocUriField(), ci.getUri());
+				docCopy.addField(MICO_PROCESSED_STATUS_FIELD, Boolean.toString(false));
 				
 				Logging.agents.info("Submitted "+contentPart.getUri()+" for Content Item "+ci.getUri());
 			}
