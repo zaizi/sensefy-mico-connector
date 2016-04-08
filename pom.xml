@@ -13,7 +13,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
 
-	<artifactId>mcf-mico-connector</artifactId>
+	<artifactId>mcf-mico-multimedia-connector</artifactId>
 	<name>ManifoldCF - Connectors - MICO Transformer</name>
 
 	<build>

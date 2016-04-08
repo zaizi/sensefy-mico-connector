@@ -16,7 +16,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.apache.manifoldcf.agents.transformation.mico;
+package org.apache.manifoldcf.agents.transformation.mico.multimedia;
 
 import java.util.Locale;
 import java.util.Map;
@@ -25,8 +25,8 @@ import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
 
 public class Messages extends org.apache.manifoldcf.ui.i18n.Messages
 {
-  public static final String DEFAULT_BUNDLE_NAME="org.apache.manifoldcf.agents.transformation.mico.common";
-  public static final String DEFAULT_PATH_NAME="org.apache.manifoldcf.agents.transformation.mico";
+  public static final String DEFAULT_BUNDLE_NAME="org.apache.manifoldcf.agents.transformation.mico.multimedia.common";
+  public static final String DEFAULT_PATH_NAME="org.apache.manifoldcf.agents.transformation.mico.multimedia";
   
   /** Constructor - do no instantiate
   */

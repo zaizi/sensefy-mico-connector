@@ -17,7 +17,7 @@
 * limitations under the License.
 */
 
-package org.apache.manifoldcf.agents.transformation.mico;
+package org.apache.manifoldcf.agents.transformation.mico.multimedia;
 
 import org.zaizi.mico.client.MicoClientFactory;
 
