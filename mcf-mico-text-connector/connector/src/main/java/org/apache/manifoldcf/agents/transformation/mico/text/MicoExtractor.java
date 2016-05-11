@@ -152,21 +152,24 @@ public class MicoExtractor extends BaseTransformationConnector {
 		RepositoryDocument docCopy = document.duplicate();
 
 		try {
-			MicoClientFactory micoClientFactory = MicoConfig.getMicoClientFactory(sp.getMicoServer(), sp.getMicoUser(),
-					sp.getMicoPassword());
+			if(!(filterMimeTypes.contains(document.getMimeType()))){
+				MicoClientFactory micoClientFactory = MicoConfig.getMicoClientFactory(sp.getMicoServer(), sp.getMicoUser(),
+						sp.getMicoPassword());
 
-			Injector injector = micoClientFactory.createInjectorClient();
-			ContentItem ci = injector.createContentItem();
+				Injector injector = micoClientFactory.createInjectorClient();
+				ContentItem ci = injector.createContentItem();
 
-			ContentPart contentPart = injector.addContentPart(ci, TEXT_MIMETYPE, documentURI,
-					new ByteArrayInputStream(bytes));
-			ci.addContentPart(contentPart);
-			injector.submitContentItem(ci);
+				ContentPart contentPart = injector.addContentPart(ci, TEXT_MIMETYPE, documentURI,
+						new ByteArrayInputStream(bytes));
+				ci.addContentPart(contentPart);
+				injector.submitContentItem(ci);
 
-			docCopy.addField(sp.getMicoDocUriField(), ci.getUri());
-			docCopy.addField(MICO_PROCESSED_STATUS_FIELD, Boolean.toString(false));
+				docCopy.addField(sp.getMicoDocUriField(), ci.getUri());
+				docCopy.addField(MICO_PROCESSED_STATUS_FIELD, Boolean.toString(false));
 
-			Logging.agents.info("Submitted " + contentPart.getUri() + " for Content Item " + ci.getUri());
+				Logging.agents.info("Submitted " + contentPart.getUri() + " for Content Item " + ci.getUri());
+			}
+			
 
 		} catch (MicoClientException e) {
 			Logging.agents.error("Exception occured in Mico Client", e);
@@ -185,6 +188,14 @@ public class MicoExtractor extends BaseTransformationConnector {
 
 		// Set up to spool back the original content, using either memory or
 		// disk, whichever makes sense.
+	}
+	
+	private final static Set<String> filterMimeTypes = new HashSet<String>();
+
+	static {
+		filterMimeTypes.add("video/mp4");
+		filterMimeTypes.add("image/jpeg");
+		filterMimeTypes.add("image/png");
 	}
 
 	/**

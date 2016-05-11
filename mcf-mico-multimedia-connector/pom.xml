@@ -308,6 +308,7 @@
 			<artifactId>mico.client</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
+		
 
 		<!-- Testing dependencies -->
 

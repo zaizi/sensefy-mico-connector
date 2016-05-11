@@ -144,11 +144,27 @@ public class MicoExtractor extends BaseTransformationConnector {
 		Logging.agents.debug("Starting MICO extraction");
 
 		SpecPacker sp = new SpecPacker(pipelineDescription.getSpecification());
-
-		byte[] bytes = IOUtils.toByteArray(document.getBinaryStream());
+		
+		DestinationStorage ds;
+	      
+	    if (document.getBinaryLength() <= inMemoryMaximumFile)
+	    {
+	      ds = new MemoryDestinationStorage((int)document.getBinaryLength());
+	    }
+	    else
+	    {
+	      ds = new FileDestinationStorage();
+	    }
+		
+		InputStream is = document.getBinaryStream();
+		final OutputStream os = ds.getOutputStream();
+		
+		IOUtils.copy(is, os);
 		
 		// create a duplicate
 		RepositoryDocument docCopy = document.duplicate();
+		
+		String mediaType = document.getMimeType();
 
 		try {
 			MicoClientFactory micoClientFactory = MicoConfig.getMicoClientFactory(sp.getMicoServer(), sp.getMicoUser(),
@@ -156,19 +172,22 @@ public class MicoExtractor extends BaseTransformationConnector {
 			
 
 			// use tika to detect mediatype
-			Metadata metadata = new Metadata();
-			TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
-			Detector detector = tikaConfig.getDetector();
-			TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(bytes));
-			MediaType media = detector.detect(tis, metadata);
-			String mediaType = media.toString();
+			if(mediaType.equals("application/octet-stream") || (mediaType == null) || mediaType.isEmpty()){
+				Metadata metadata = new Metadata();
+				TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+				Detector detector = tikaConfig.getDetector();
+				TikaInputStream tis = TikaInputStream.get(ds.getInputStream());
+				MediaType media = detector.detect(tis, metadata);
+				mediaType = media.toString();
+			}
+			
 
 			if (acceptableMimeTypes.contains(mediaType.toLowerCase(Locale.ROOT))) {
 				// inject to mico platform
 				Injector injector = micoClientFactory.createInjectorClient();
 				ContentItem ci = injector.createContentItem();
 				
-				ContentPart contentPart = injector.addContentPart(ci, mediaType, documentURI, new ByteArrayInputStream(bytes));
+				ContentPart contentPart = injector.addContentPart(ci, mediaType, documentURI, ds.getInputStream());
 				ci.addContentPart(contentPart);
 				injector.submitContentItem(ci);
 				
@@ -183,7 +202,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 		}
 
 		// reset original stream
-		docCopy.setBinary(new ByteArrayInputStream(bytes), bytes.length);
+		docCopy.setBinary(ds.getInputStream(), ds.getBinaryLength());
 
 		return activities.sendDocument(documentURI, docCopy);
 
@@ -449,6 +468,143 @@ public class MicoExtractor extends BaseTransformationConnector {
 			throw new ManifoldCFException(e.getMessage(), e, ManifoldCFException.INTERRUPTED);
 		throw new ManifoldCFException(e.getMessage(), e);
 	}
+	
+	protected static interface DestinationStorage
+	  {
+	    /** Get the output stream to write to.  Caller should explicitly close this stream when done writing.
+	    */
+	    public OutputStream getOutputStream()
+	      throws ManifoldCFException;
+	    
+	    /** Get new binary length.
+	    */
+	    public long getBinaryLength()
+	      throws ManifoldCFException;
+
+	    /** Get the input stream to read from.  Caller should explicitly close this stream when done reading.
+	    */
+	    public InputStream getInputStream()
+	      throws ManifoldCFException;
+	    
+	    /** Close the object and clean up everything.
+	    * This should be called when the data is no longer needed.
+	    */
+	    public void close()
+	      throws ManifoldCFException;
+	  }
+	
+	protected static class FileDestinationStorage implements DestinationStorage
+	  {
+	    protected final File outputFile;
+	    protected final OutputStream outputStream;
+
+	    public FileDestinationStorage()
+	      throws ManifoldCFException
+	    {
+	      File outputFile;
+	      OutputStream outputStream;
+	      try
+	      {
+	        outputFile = File.createTempFile("mcfmico","tmp");
+	        outputStream = new FileOutputStream(outputFile);
+	      }
+	      catch (IOException e)
+	      {
+	        handleIOException(e);
+	        outputFile = null;
+	        outputStream = null;
+	      }
+	      this.outputFile = outputFile;
+	      this.outputStream = outputStream;
+	    }
+	    
+	    @Override
+	    public OutputStream getOutputStream()
+	      throws ManifoldCFException
+	    {
+	      return outputStream;
+	    }
+	    
+	    /** Get new binary length.
+	    */
+	    @Override
+	    public long getBinaryLength()
+	      throws ManifoldCFException
+	    {
+	      return outputFile.length();
+	    }
+
+	    /** Get the input stream to read from.  Caller should explicitly close this stream when done reading.
+	    */
+	    @Override
+	    public InputStream getInputStream()
+	      throws ManifoldCFException
+	    {
+	      try
+	      {
+	        return new FileInputStream(outputFile);
+	      }
+	      catch (IOException e)
+	      {
+	        handleIOException(e);
+	        return null;
+	      }
+	    }
+	    
+	    /** Close the object and clean up everything.
+	    * This should be called when the data is no longer needed.
+	    */
+	    @Override
+	    public void close()
+	      throws ManifoldCFException
+	    {
+	      outputFile.delete();
+	    }
+	  }
+	
+	protected static class MemoryDestinationStorage implements DestinationStorage
+	  {
+	    protected final ByteArrayOutputStream outputStream;
+	    
+	    public MemoryDestinationStorage(int sizeHint)
+	    {
+	      outputStream = new ByteArrayOutputStream(sizeHint);
+	    }
+	    
+	    @Override
+	    public OutputStream getOutputStream()
+	      throws ManifoldCFException
+	    {
+	      return outputStream;
+	    }
+
+	    /** Get new binary length.
+	    */
+	    @Override
+	    public long getBinaryLength()
+	      throws ManifoldCFException
+	    {
+	      return outputStream.size();
+	    }
+	    
+	    /** Get the input stream to read from.  Caller should explicitly close this stream when done reading.
+	    */
+	    @Override
+	    public InputStream getInputStream()
+	      throws ManifoldCFException
+	    {
+	      return new ByteArrayInputStream(outputStream.toByteArray());
+	    }
+	    
+	    /** Close the object and clean up everything.
+	    * This should be called when the data is no longer needed.
+	    */
+	    public void close()
+	      throws ManifoldCFException
+	    {
+	    }
+
+	  }
 
 	protected static class SpecPacker {
 

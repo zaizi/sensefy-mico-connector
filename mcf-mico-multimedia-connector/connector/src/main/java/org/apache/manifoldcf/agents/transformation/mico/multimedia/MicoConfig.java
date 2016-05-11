@@ -35,7 +35,7 @@ public class MicoConfig {
 
 	private static MicoClientFactory micoClientFactory;
 
-	public static synchronized MicoClientFactory getMicoClientFactory(String micoServer, String micoUser, String micoPassword)
+	public static MicoClientFactory getMicoClientFactory(String micoServer, String micoUser, String micoPassword)
 			{
 		if (micoClientFactory == null) {
 			micoClientFactory = new MicoClientFactory(micoServer, micoUser, micoPassword);
