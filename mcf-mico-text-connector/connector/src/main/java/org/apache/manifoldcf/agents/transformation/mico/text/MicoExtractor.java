@@ -37,11 +37,6 @@ import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
 import org.apache.manifoldcf.core.interfaces.Specification;
 import org.apache.manifoldcf.core.interfaces.SpecificationNode;
 import org.apache.manifoldcf.core.interfaces.VersionContext;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
 import org.zaizi.mico.client.Injector;
 import org.zaizi.mico.client.MicoClientFactory;
 import org.zaizi.mico.client.exception.MicoClientException;
@@ -157,7 +152,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 						sp.getMicoPassword());
 
 				Injector injector = micoClientFactory.createInjectorClient();
-				ContentItem ci = injector.createContentItem();
+				ContentItem ci = injector.createContentItem(TEXT_MIMETYPE, documentURI, new ByteArrayInputStream(bytes));
 
 				ContentPart contentPart = injector.addContentPart(ci, TEXT_MIMETYPE, documentURI,
 						new ByteArrayInputStream(bytes));

@@ -185,7 +185,7 @@ public class MicoExtractor extends BaseTransformationConnector {
 			if (acceptableMimeTypes.contains(mediaType.toLowerCase(Locale.ROOT))) {
 				// inject to mico platform
 				Injector injector = micoClientFactory.createInjectorClient();
-				ContentItem ci = injector.createContentItem();
+				ContentItem ci = injector.createContentItem(mediaType, documentURI, ds.getInputStream());
 				
 				ContentPart contentPart = injector.addContentPart(ci, mediaType, documentURI, ds.getInputStream());
 				ci.addContentPart(contentPart);
