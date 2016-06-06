@@ -153,16 +153,12 @@ public class MicoExtractor extends BaseTransformationConnector {
 
 				Injector injector = micoClientFactory.createInjectorClient();
 				ContentItem ci = injector.createContentItem(TEXT_MIMETYPE, documentURI, new ByteArrayInputStream(bytes));
-
-				ContentPart contentPart = injector.addContentPart(ci, TEXT_MIMETYPE, documentURI,
-						new ByteArrayInputStream(bytes));
-				ci.addContentPart(contentPart);
 				injector.submitContentItem(ci);
 
 				docCopy.addField(sp.getMicoDocUriField(), ci.getUri());
 				docCopy.addField(MICO_PROCESSED_STATUS_FIELD, Boolean.toString(false));
 
-				Logging.agents.info("Submitted " + contentPart.getUri() + " for Content Item " + ci.getUri());
+				Logging.agents.info("Submitted Content Item " + ci.getUri());
 			}
 			
 
